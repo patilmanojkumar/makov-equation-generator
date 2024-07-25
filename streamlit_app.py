@@ -75,7 +75,7 @@ if uploaded_file:
             data = read_data(uploaded_file, sheet_name, start_row, end_row, start_col, end_col)
             equations = calculate_markov_chain(data)
             st.subheader("Generated Markov Chain Equations")
-            st.text_area("Equations", value=equations, height=300)
+            st.text_area("Copy the equations below:", equations, height=300)
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
