@@ -1,0 +1,1 @@
+# makov-equation-generator
