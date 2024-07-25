@@ -57,7 +57,7 @@ def calculate_markov_chain(data):
     return s_text
 
 # Streamlit app
-st.title("Markov-Equations-Generator")
+st.title("Markov Chain Equations Generator")
 
 st.sidebar.header("Upload Your Excel File")
 uploaded_file = st.sidebar.file_uploader("Choose an Excel file", type="xlsx")
@@ -76,10 +76,6 @@ if uploaded_file:
             equations = calculate_markov_chain(data)
             st.subheader("Generated Markov Chain Equations")
             st.text_area("Equations", value=equations, height=300)
-
-            # Adding copy to clipboard button
-            st.markdown(f'<button onclick="navigator.clipboard.writeText(`{equations}`)">Copy to Clipboard</button>', unsafe_allow_html=True)
-
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
