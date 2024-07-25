@@ -8,6 +8,8 @@ def read_data(file, sheet_name, start_row, end_row, start_col, end_col):
     df = pd.read_excel(file, sheet_name=sheet_name, header=None)
     data = df.iloc[start_row-1:end_row, start_col-1:end_col].values
     return data
+#Data Preview
+data.head()
 
 # Function to calculate Markov Chain probabilities and generate equations
 def calculate_markov_chain(data):
