@@ -1,16 +1,17 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 def main():
     st.title("Markov Chain Analysis")
 
-    # Sidebar always visible for interactions
     st.sidebar.header("Upload Your Excel File")
     uploaded_file = st.sidebar.file_uploader("Choose an Excel file", type=["xlsx", "xls"])
     
     if uploaded_file:
-        # Display uploaded file name
-        st.sidebar.write(f"**Uploaded File:** {uploaded_file.name}")
+        # Display a message to user
+        st.write("**Uploaded File:**")
+        st.write(uploaded_file.name)
         
         # Load the Excel file
         data = pd.ExcelFile(uploaded_file)
@@ -20,7 +21,7 @@ def main():
         
         # User input for data range
         st.sidebar.header("Select Data Range")
-        sheet_name = st.sidebar.text_input("Sheet Name", value=sheets[0] if sheets else "")
+        sheet_name = st.sidebar.text_input("Sheet Name", value="Sheet1")
         start_row = st.sidebar.number_input("Start Row", min_value=1, value=2)
         end_row = st.sidebar.number_input("End Row", min_value=1, value=10)
         start_col = st.sidebar.number_input("Start Column", min_value=1, value=1)
@@ -36,16 +37,9 @@ def main():
                 # Generate the Markov Chain equations
                 equations = generate_equations(selected_data)
                 
-                # Store equations in session state
-                st.session_state["equations"] = equations
-                
                 # Display the equations
                 st.subheader("Generated Markov Chain Equations")
-                st.text_area("Generated Equations", equations, height=300)
-                
-                # Copy button
-                if st.button("Copy to Clipboard"):
-                    st.write("Select the text above and press Ctrl+C to copy.")
+                st.text_area("Copy the equations below:", equations, height=300)
                 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
@@ -54,8 +48,8 @@ def generate_equations(df):
     """Generate Markov Chain equations based on the input data frame."""
     rows, cols = df.shape
     equations = ""
-    min_m = []
-    min_n = []
+    min_u = []
+    min_v = []
     s_xend = ""
 
     for n in range(cols):
@@ -75,19 +69,19 @@ def generate_equations(df):
                 if j == 5:
                     equations += "\n"
             
-            equations += f"m{i+1}-n{i+1}={df.iloc[i, n+1]};\n"
-            min_m.append(f"m{i+1}+")
+            equations += f"m{i+1}-v{i+1}={df.iloc[i, n+1]};\n"
+            min_u.append(f"m{i+1}+")
             if n == cols - 1 and i == rows - 1:
-                min_n.append(f"n{i+1};")
+                min_v.append(f"n{i+1};")
             else:
-                min_n.append(f"n{i+1}+")
+                min_v.append(f"n{i+1}+")
                 
         equations += "\n\n"
 
     s_text = "MODEL:\n"
     s_text += "MIN =\n"
-    s_text += "".join(min_m) + "\n"
-    s_text += "".join(min_n) + "\n\n"
+    s_text += "".join(min_u) + "\n"
+    s_text += "".join(min_v) + "\n\n"
     s_text += "!CONSTRAINTS;\n"
     s_text += equations + "\n"
     s_text += s_xend + "\n"
