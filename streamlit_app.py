@@ -42,10 +42,10 @@ def calculate_markov_chain(data):
                         s_xend[-1] += "=1;"
 
             s_output.append(f"{'+'.join(row_eq)}")
-            s_output.append(f"u{i_rownum}-v{i_rownum}={mcdata1[i + 1, n]:.4f};\n")
+            s_output.append(f"m{i_rownum}-n{i_rownum}={mcdata1[i + 1, n]:.4f};\n")
 
-            s_minu.append(f"u{i_rownum}")
-            s_minv.append(f"v{i_rownum}")
+            s_minu.append(f"m{i_rownum}")
+            s_minv.append(f"n{i_rownum}")
             i_rownum += 1
 
     s_text = "MODEL:\nMIN =\n"
