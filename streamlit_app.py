@@ -49,12 +49,12 @@ def calculate_markov_chain(data):
             i_rownum += 1
 
     s_text = "MODEL:\nMIN =\n"
-    s_text += '+'.join(s_minu) + ";\n" + '+'.join(s_minv) + ";\n\n"
+    s_text += '+'.join(s_minu) '+'.join(s_minv) + ";\n\n"
     s_text += "!CONSTRAINTS;\n"
     s_text += '\n'.join(s_output) + "\n"
     s_text += '\n'.join(s_xend) + "\nEND"
     
-    return s_text
+    return s_minu,s_minv,s_output,s_xend,s_text
 
 # Streamlit app
 st.title("Markov Chain Equations Generator")
