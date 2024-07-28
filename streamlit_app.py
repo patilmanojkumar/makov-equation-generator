@@ -2,67 +2,30 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# Function to read data from an uploaded file
-def read_data(file, sheet_name, start_row, end_row, start_col, end_col):
-    df = pd.read_excel(file, sheet_name=sheet_name, header=None)
-    data = df.iloc[start_row-1:end_row, start_col-1:end_col].values
-    return data
+def calculate_transition_matrix(data, columns):
+    diffs = data[columns].diff().dropna()
+    states = diffs.applymap(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
+    transition_matrix = np.zeros((3, 3))
 
-# Function to calculate Markov Chain probabilities and generate equations
-def calculate_markov_chain(data):
-    tot_rows, tot_cols = data.shape
-    mcdata = data.copy()
+    for i in range(len(states) - 1):
+        row = states.iloc[i].values
+        next_row = states.iloc[i + 1].values
+        for j in range(len(row)):
+            transition_matrix[row[j] + 1, next_row[j] + 1] += 1
 
-    # Normalize the data to get Markov Chain probabilities
-    for i in range(tot_rows):
-        row_sum = mcdata[i, :-1].sum()
-        if row_sum != 0:
-            mcdata[i, :-1] /= row_sum
+    transition_matrix /= transition_matrix.sum(axis=1)[:, None]
+    return transition_matrix
 
-    equations = []
-    for row in range(tot_rows):
-        equation = []
-        for col in range(tot_cols - 1):
-            coeff = f"{mcdata[row, col]:.4f}"
-            equation.append(f"{coeff}*x{chr(97 + col)}{row + 1}")
-        u_var = f"u{row + 1}"
-        v_var = f"v{row + 1}"
-        const_term = f"{data[row, -1]:.4f}"
-        equation = " + ".join(equation)
-        equations.append(f"{equation} + {u_var} - {v_var} = {const_term};")
+st.title("Transition Probability Matrix Calculator")
 
-    # Constraint for sum of probabilities being 1
-    sum_constraints = []
-    for col in range(tot_cols - 1):
-        x_vars = [f"x{chr(97 + col)}{row + 1}" for row in range(tot_rows)]
-        sum_constraints.append(" + ".join(x_vars) + " = 1;")
-    
-    # Format the output string
-    model = "MODEL:\nMIN =\n" + "\n".join([f"u{row + 1}+" for row in range(tot_rows)]) + "\n" + "\n".join([f"v{row + 1}+" for row in range(tot_rows)]) + "\n\n!CONSTRAINTS;\n" + "\n".join(equations) + "\n\n" + "\n".join(sum_constraints) + "END"
-    
-    return model
+uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
+if uploaded_file is not None:
+    data = pd.read_excel(uploaded_file)
+    st.write("Data Preview:")
+    st.write(data.head())
 
-# Streamlit app
-st.title("Markov Chain Equations Generator")
-
-st.sidebar.header("Upload Your Excel File")
-uploaded_file = st.sidebar.file_uploader("Choose an Excel file", type="xlsx")
-
-if uploaded_file:
-    st.sidebar.header("Specify Data Range")
-    sheet_name = st.sidebar.text_input("Sheet Name", value="Sheet1")
-    start_row = st.sidebar.number_input("Start Row", min_value=1, value=2)
-    end_row = st.sidebar.number_input("End Row", min_value=start_row, value=start_row+10)
-    start_col = st.sidebar.number_input("Start Column (1-indexed)", min_value=1, value=2)
-    end_col = st.sidebar.number_input("End Column (1-indexed)", min_value=start_col, value=start_col+3)
-
-    if st.sidebar.button("Generate Markov Chain Equations"):
-        try:
-            data = read_data(uploaded_file, sheet_name, start_row, end_row, start_col, end_col)
-            model = calculate_markov_chain(data)
-            st.subheader("Generated Markov Chain Equations")
-            st.text_area("Equations", value=model, height=300)
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-
-st.sidebar.write("Upload your Excel file and specify the range to generate the Markov Chain equations.")
+    selected_columns = st.multiselect("Select Columns for Analysis", data.columns)
+    if selected_columns:
+        transition_matrix = calculate_transition_matrix(data, selected_columns)
+        st.write("Transition Probability Matrix:")
+        st.write(transition_matrix)
