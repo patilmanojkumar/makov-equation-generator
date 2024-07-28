@@ -19,10 +19,15 @@ def calculate_tpm(data):
 
 st.title("Transitional Probability Matrix Calculator")
 
-uploaded_file = st.file_uploader("Upload your panel data CSV file", type=["csv"])
+uploaded_file = st.file_uploader("Upload your panel data file (CSV, XLS, XLSX)", type=["csv", "xls", "xlsx"])
 
 if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file)
+    # Read the file depending on the extension
+    if uploaded_file.name.endswith('.csv'):
+        data = pd.read_csv(uploaded_file)
+    elif uploaded_file.name.endswith(('.xls', '.xlsx')):
+        data = pd.read_excel(uploaded_file)
+    
     st.write("Data Preview:")
     st.dataframe(data)
 
