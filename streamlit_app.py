@@ -14,47 +14,31 @@ def calculate_markov_chain(data):
     tot_rows, tot_cols = data.shape
     mcdata = data.copy()
 
-    mcdata1 = np.zeros_like(mcdata)
-
+    # Normalize the data to get Markov Chain probabilities
     for i in range(tot_rows):
-        for j in range(tot_cols - 1):
-            if mcdata[i, -1] != 0:
-                mcdata1[i, j] = (mcdata[i, j] / mcdata[i, -1]) * 10000
-                mcdata1[i, j] = np.round(mcdata1[i, j] + 0.5) / 10000
+        row_sum = mcdata[i, :-1].sum()
+        if row_sum != 0:
+            mcdata[i, :-1] /= row_sum
 
-    s_output = []
-    s_xend = []
-    s_minu = []
-    s_minv = []
-    i_rownum = 1
-
-    for n in range(tot_cols - 1):
-        for i in range(tot_rows - 1):
-            row_eq = []
-            for j in range(tot_cols - 1):
-                row_eq.append(f"{mcdata1[i, j]:.4f}*x{chr(96 + j + 1)}{n + 1}")
-                if j == 4:
-                    row_eq.append("\n")
-
-                if i == 0:
-                    s_xend.append(f"1*x{chr(96 + n + 1)}{j + 1}")
-                    if j == tot_cols - 2:
-                        s_xend[-1] += "=1;"
-
-            s_output.append(f"{'+'.join(row_eq)}")
-            s_output.append(f"m{i_rownum}-n{i_rownum}={mcdata1[i + 1, n]:.4f};\n")
-
-            s_minu.append(f"m{i_rownum}")
-            s_minv.append(f"n{i_rownum}")
-            i_rownum += 1
-
-    s_text = "MODEL:\nMIN =\n"
-    s_text += '+'.join(s_minu) +'+'.join(s_minv) + ";\n\n"
-    s_text += "!CONSTRAINTS;\n"
-    s_text += '\n'.join(s_output) + "\n"
-    s_text += '\n'.join(s_xend) + "\nEND"
+    equations = []
+    for row in range(tot_rows):
+        for col in range(tot_cols - 1):
+            equation = []
+            for var in range(tot_cols - 1):
+                coeff = f"{mcdata[row, var]:.4f}"
+                equation.append(f"{coeff}*x{chr(97 + var)}{row + 1}")
+            u_var = f"u{row + 1}"
+            v_var = f"v{row + 1}"
+            const_term = f"{data[row, -1]:.4f}"
+            equation = " + ".join(equation)
+            equations.append(f"{equation} + {u_var} - {v_var} = {const_term};")
     
-    return s_minu,s_minv,s_output,s_xend,s_text
+    # Constraint for sum of probabilities being 1
+    for col in range(tot_cols - 1):
+        x_vars = [f"x{chr(97 + col)}{row + 1}" for row in range(tot_rows)]
+        equations.append(" + ".join(x_vars) + " = 1;")
+    
+    return equations
 
 # Streamlit app
 st.title("Markov Chain Equations Generator")
@@ -75,7 +59,7 @@ if uploaded_file:
             data = read_data(uploaded_file, sheet_name, start_row, end_row, start_col, end_col)
             equations = calculate_markov_chain(data)
             st.subheader("Generated Markov Chain Equations")
-            st.text_area("Equations", value=equations, height=300)
+            st.text_area("Equations", value="\n".join(equations), height=300)
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
