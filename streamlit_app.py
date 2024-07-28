@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import io
 
 # Function to read data from an uploaded file
 def read_data(file, sheet_name, start_row, end_row, start_col, end_col):
@@ -22,23 +21,26 @@ def calculate_markov_chain(data):
 
     equations = []
     for row in range(tot_rows):
+        equation = []
         for col in range(tot_cols - 1):
-            equation = []
-            for var in range(tot_cols - 1):
-                coeff = f"{mcdata[row, var]:.4f}"
-                equation.append(f"{coeff}*x{chr(97 + var)}{row + 1}")
-            u_var = f"u{row + 1}"
-            v_var = f"v{row + 1}"
-            const_term = f"{data[row, -1]:.4f}"
-            equation = " + ".join(equation)
-            equations.append(f"{equation} + {u_var} - {v_var} = {const_term};")
-    
+            coeff = f"{mcdata[row, col]:.4f}"
+            equation.append(f"{coeff}*x{chr(97 + col)}{row + 1}")
+        u_var = f"u{row + 1}"
+        v_var = f"v{row + 1}"
+        const_term = f"{data[row, -1]:.4f}"
+        equation = " + ".join(equation)
+        equations.append(f"{equation} + {u_var} - {v_var} = {const_term};")
+
     # Constraint for sum of probabilities being 1
+    sum_constraints = []
     for col in range(tot_cols - 1):
         x_vars = [f"x{chr(97 + col)}{row + 1}" for row in range(tot_rows)]
-        equations.append(" + ".join(x_vars) + " = 1;")
+        sum_constraints.append(" + ".join(x_vars) + " = 1;")
     
-    return equations
+    # Format the output string
+    model = "MODEL:\nMIN =\n" + "\n".join([f"u{row + 1}+" for row in range(tot_rows)]) + "\n" + "\n".join([f"v{row + 1}+" for row in range(tot_rows)]) + "\n\n!CONSTRAINTS;\n" + "\n".join(equations) + "\n\n" + "\n".join(sum_constraints) + "END"
+    
+    return model
 
 # Streamlit app
 st.title("Markov Chain Equations Generator")
@@ -57,9 +59,9 @@ if uploaded_file:
     if st.sidebar.button("Generate Markov Chain Equations"):
         try:
             data = read_data(uploaded_file, sheet_name, start_row, end_row, start_col, end_col)
-            equations = calculate_markov_chain(data)
+            model = calculate_markov_chain(data)
             st.subheader("Generated Markov Chain Equations")
-            st.text_area("Equations", value="\n".join(equations), height=300)
+            st.text_area("Equations", value=model, height=300)
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
